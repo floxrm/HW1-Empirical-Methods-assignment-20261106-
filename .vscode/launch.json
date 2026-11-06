@@ -1,0 +1,13 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run hw1.py",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/hw1.py",
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal"
+    }
+  ]
+}
