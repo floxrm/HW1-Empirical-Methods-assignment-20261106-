@@ -106,12 +106,12 @@ for c in ["COCACOLA", "MICROSOFT", "EXXON"]:
 print("\n" + "=" * 70, "\nQUESTION 2\n", "=" * 70)
 
 # (a) Import ----------------------------------------------------------
-pen = pd.read_stata("data/pension.dta")
-print("(a) shape:", pen.shape)
+pension_data = pd.read_stata("data/pension.dta")
+print("(a) shape:", pension_data.shape)
 
 # (b) Single-person households ----------------------------------------
-single = pen[pen["fsize"] == 1].copy()
-print(f"(b) single-person households: {len(single)} ({len(single)/len(pen):.2%} of {len(pen)})")
+single = pension_data[pension_data["fsize"] == 1].copy()
+print(f"(b) single-person households: {len(single)} ({len(single)/len(pension_data):.2%} of {len(pension_data)})")
 
 # (c) nettfa = b0 + b1 inc + b2 age + u, singles ----------------------
 m1 = smf.ols("nettfa ~ inc + age", data=single).fit()
@@ -140,32 +140,32 @@ print("    auxiliary slope delta (age on inc) =", round(aux.params["inc"], 4),
       "-> OVB check: b1 + b2*delta =", round(m1.params["inc"] + m1.params["age"] * aux.params["inc"], 4))
 
 # (h) Full sample, quadratic model ------------------------------------
-pen["inc2"] = pen["inc"] ** 2
-pen["age2"] = pen["age"] ** 2
+pension_data["inc2"] = pension_data["inc"] ** 2
+pension_data["age2"] = pension_data["age"] ** 2
 f2 = "nettfa ~ inc + age + inc2 + age2 + fsize"
-m3 = smf.ols(f2, data=pen).fit()
+m3 = smf.ols(f2, data=pension_data).fit()
 print("\n(h)\n", m3.summary().tables[1], f"\nR2={m3.rsquared:.4f}, N={int(m3.nobs)}")
 b_age, b_age2 = m3.params["age"], m3.params["age2"]
 print(f"    d nettfa/d age = {b_age:.3f} + 2*({b_age2:.4f})*age -> positive for age < {-b_age/(2*b_age2):.1f}")
-print("    marginal income effect at mean inc:", round(m3.params["inc"] + 2 * m3.params["inc2"] * pen["inc"].mean(), 4))
-print("    sample age range:", pen["age"].min(), "-", pen["age"].max())
+print("    marginal income effect at mean inc:", round(m3.params["inc"] + 2 * m3.params["inc2"] * pension_data["inc"].mean(), 4))
+print("    sample age range:", pension_data["age"].min(), "-", pension_data["age"].max())
 
 # (i) F-test H0: b3 = b4 = 0 ------------------------------------------
 print("\n(i)", m3.f_test("inc2 = 0, age2 = 0"))
 
 # (j) Rescale inc / 100 (inc2 must be rescaled consistently: (inc/100)^2)
-pen["inc_s"] = pen["inc"] / 100
-pen["inc_s2"] = pen["inc_s"] ** 2
-m4 = smf.ols("nettfa ~ inc_s + age + inc_s2 + age2 + fsize", data=pen).fit()
+pension_data["inc_s"] = pension_data["inc"] / 100
+pension_data["inc_s2"] = pension_data["inc_s"] ** 2
+m4 = smf.ols("nettfa ~ inc_s + age + inc_s2 + age2 + fsize", data=pension_data).fit()
 print("\n(j) rescaled inc (and its square)\n", m4.summary().tables[1])
 print("    t(inc) original:", round(m3.tvalues["inc"], 4), "| rescaled:", round(m4.tvalues["inc_s"], 4))
 print("    R2 original/rescaled:", round(m3.rsquared, 6), round(m4.rsquared, 6))
 # Variant: rescale inc only, keep original inc2 as in the literal wording
-m4b = smf.ols("nettfa ~ inc_s + age + inc2 + age2 + fsize", data=pen).fit()
+m4b = smf.ols("nettfa ~ inc_s + age + inc2 + age2 + fsize", data=pension_data).fit()
 print("    variant (inc2 NOT rescaled): inc_s coef", round(m4b.params["inc_s"], 4), "t", round(m4b.tvalues["inc_s"], 4))
 
 # (k) Robust (White) SEs ----------------------------------------------
-m5 = smf.ols(f2, data=pen).fit(cov_type="HC1")
+m5 = smf.ols(f2, data=pension_data).fit(cov_type="HC1")
 cmp_ = pd.DataFrame({"coef": m3.params, "se_OLS": m3.bse, "t_OLS": m3.tvalues, "p_OLS": m3.pvalues,
                      "se_HC1": m5.bse, "t_HC1": m5.tvalues, "p_HC1": m5.pvalues})
 print("\n(k) OLS vs heteroskedasticity-robust (HC1)\n", cmp_)
