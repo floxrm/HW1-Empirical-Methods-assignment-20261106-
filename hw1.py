@@ -106,7 +106,7 @@ for c in ["COCACOLA", "MICROSOFT", "EXXON"]:
 print("\n" + "=" * 70, "\nQUESTION 2\n", "=" * 70)
 
 # (a) Import ----------------------------------------------------------
-pension_data = pd.read_stata("data/pension.dta")
+pension_data = pd.read_stata("data/pension.dta").astype("float64")   # age/fsize are int8 in the file: avoid overflow when squaring
 print("(a) shape:", pension_data.shape)
 
 # (b) Single-person households ----------------------------------------
@@ -146,7 +146,7 @@ f2 = "nettfa ~ inc + age + inc2 + age2 + fsize"
 m3 = smf.ols(f2, data=pension_data).fit()
 print("\n(h)\n", m3.summary().tables[1], f"\nR2={m3.rsquared:.4f}, N={int(m3.nobs)}")
 b_age, b_age2 = m3.params["age"], m3.params["age2"]
-print(f"    d nettfa/d age = {b_age:.3f} + 2*({b_age2:.4f})*age -> positive for age < {-b_age/(2*b_age2):.1f}")
+print(f"    d nettfa/d age = {b_age:.3f} + 2*({b_age2:.4f})*age -> positive for age > {-b_age/(2*b_age2):.1f}")
 print("    marginal income effect at mean inc:", round(m3.params["inc"] + 2 * m3.params["inc2"] * pension_data["inc"].mean(), 4))
 print("    sample age range:", pension_data["age"].min(), "-", pension_data["age"].max())
 
